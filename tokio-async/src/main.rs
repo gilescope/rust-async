@@ -8,6 +8,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         let (mut socket, _) = listener.accept().await?;
 
+        println!("Connection estabilished");
+
         tokio::spawn(async move {
             let mut buf = [0; 1024];
 
