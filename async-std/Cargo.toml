@@ -1,5 +1,5 @@
 [package]
-name = "tokioasync"
+name = "asyncstd"
 version = "0.1.0"
 authors = [" <fbucek@invloop.cz>"]
 edition = "2018"
@@ -7,13 +7,12 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "tokioserver"
+name = "asyncserver"
 path = "src/server.rs"
 
 [[bin]]
-name = "tokioclient"
+name = "asyncclient"
 path = "src/client.rs"
-
 
 [dependencies]
 # Loggings
@@ -23,4 +22,4 @@ log = "0.4.8"
 clap = "2.33.0"
 
 # TCP networking
-tokio = { version = "0.2.4", features = ["full"] }
+async-std = "1.2.0"
