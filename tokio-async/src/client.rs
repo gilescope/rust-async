@@ -16,18 +16,34 @@ extern crate log;
 /// 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    std::env::set_var("RUST_LOG","trace");
+    std::env::set_var("RUST_LOG","debug,tokioclient=trace");
     env_logger::init();
 
-    let address = "127.0.0.1:8080";
-    trace!("Running client on: {}", &address);
+    let matches = clap::App::new("tokioclient")
+        .version("1.0")
+        .author("Filip Bucek <fbucek@invloop.cz>")
+        .about("Send data to specific IP address")
+        .arg(clap::Arg::with_name("DATA")
+            .help("Sets the binary input file to use")
+            .required(true)
+            .index(1))
+        .get_matches();
 
+    let data = matches.value_of("DATA").unwrap_or("");
+
+
+
+    let address = "127.0.0.1:8080";
+    info!("Running client on: {}", &address);
 
     let mut stream = TcpStream::connect(&address).await?;
 
     trace!("Keep alive: {:?}", stream.keepalive()?);
     trace!("Connecting to server");
-    stream.write_all(b"00  1121|8|3|78718|").await.unwrap();
-    trace!("Wrote something to stream");
+    stream.write_all(data.as_bytes()).await.unwrap();
+
+    let mut buf = vec![0u8; 1024];
+    let n = stream.read(&mut buf).await?;
+    trace!("returned data -> size: {} data: {}", n, String::from_utf8_lossy(&buf[0..n]));
     Ok(())
 }
