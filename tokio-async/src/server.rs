@@ -18,7 +18,26 @@ extern crate log;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("RUST_LOG","debug,tokioserver=trace");
     env_logger::init();
-    let mut listener = TcpListener::bind("127.0.0.1:8080").await?;
+
+    let matches = clap::App::new("Tokio Client")
+    .version("1.0")
+    .author("Filip Bucek <fbucek@invloop.cz>")
+    .about("Sends data to specific IP address")
+    .arg(clap::Arg::with_name("ip")
+        .short("i")
+        .help("IP address")
+        .takes_value(true))
+    .arg(clap::Arg::with_name("port")
+        .short("p")
+        .help("port")
+        .takes_value(true))
+    .get_matches();
+
+    let ip = matches.value_of("ip").unwrap_or("127.0.0.1");
+    let port = matches.value_of("port").unwrap_or("8080");
+    let address = format!("{}:{}", ip, port);
+
+    let mut listener = TcpListener::bind(&address).await?;
 
     match listener.accept().await {
         Ok((_socket, addr)) => println!("new client: {:?}", addr),

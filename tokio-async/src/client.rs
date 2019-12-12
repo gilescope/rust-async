@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .get_matches();
 
     let ip = matches.value_of("ip").unwrap_or("127.0.0.1");
-    let port = matches.value_of("posr").unwrap_or("8080");
+    let port = matches.value_of("port").unwrap_or("8080");
     let data = matches.value_of("DATA").unwrap_or("");
 
     let address = format!("{}:{}", ip, port);

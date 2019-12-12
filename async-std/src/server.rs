@@ -37,8 +37,27 @@ async fn process(stream: TcpStream) -> io::Result<()> {
 fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG","debug,asyncserver=trace");
     env_logger::init();
+
+    let matches = clap::App::new("Tokio Client")
+        .version("1.0")
+        .author("Filip Bucek <fbucek@invloop.cz>")
+        .about("Sends data to specific IP address")
+        .arg(clap::Arg::with_name("ip")
+            .short("i")
+            .help("IP address")
+            .takes_value(true))
+        .arg(clap::Arg::with_name("port")
+            .short("p")
+            .help("port")
+            .takes_value(true))
+        .get_matches();
+
+    let ip = matches.value_of("ip").unwrap_or("127.0.0.1");
+    let port = matches.value_of("port").unwrap_or("8080");
+    let address = format!("{}:{}", ip, port);
+
     task::block_on(async {
-        let listener = TcpListener::bind("127.0.0.1:8080").await?;
+        let listener = TcpListener::bind(&address).await?;
         info!("Listening on {}", listener.local_addr()?);
 
         let mut incoming = listener.incoming();
