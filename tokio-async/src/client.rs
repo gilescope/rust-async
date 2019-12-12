@@ -19,21 +19,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("RUST_LOG","debug,tokioclient=trace");
     env_logger::init();
 
-    let matches = clap::App::new("tokioclient")
+    let matches = clap::App::new("Tokio Client")
         .version("1.0")
         .author("Filip Bucek <fbucek@invloop.cz>")
-        .about("Send data to specific IP address")
+        .about("Sends data to specific IP address")
         .arg(clap::Arg::with_name("DATA")
-            .help("Sets the binary input file to use")
+            .help("Data to send")
             .required(true)
             .index(1))
+        .arg(clap::Arg::with_name("ip")
+            .short("i")
+            .help("IP address")
+            .takes_value(true))
+        .arg(clap::Arg::with_name("port")
+            .short("p")
+            .help("port")
+            .takes_value(true))
         .get_matches();
 
+    let ip = matches.value_of("ip").unwrap_or("127.0.0.1");
+    let port = matches.value_of("posr").unwrap_or("8080");
     let data = matches.value_of("DATA").unwrap_or("");
 
-
-
-    let address = "127.0.0.1:8080";
+    let address = format!("{}:{}", ip, port);
     info!("Running client on: {}", &address);
 
     let mut stream = TcpStream::connect(&address).await?;
