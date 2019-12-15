@@ -14,6 +14,10 @@ path = "src/server.rs"
 name = "tokioclient"
 path = "src/client.rs"
 
+[[example]]
+name = "solution2"
+path = "src/solution2.rs"
+
 
 [dependencies]
 # Loggings
