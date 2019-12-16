@@ -3,6 +3,8 @@ use actix_web::{get, App, HttpServer, Responder, web};
 use std::time::Duration;
 use tokio::{task, time, process::Command};
 
+use std::sync::{Arc, RwLock, Mutex, MutexGuard};
+
 #[macro_use]
 extern crate log;
 
@@ -17,9 +19,17 @@ async fn index() -> &'static str {
 }
 
 #[derive(Default, Debug)]
+struct Check {
+    ip: String,
+    port: String,
+}
+
+#[derive(Default, Debug)]
 struct Controller {
     counter: std::sync::Mutex<i32>,
-    // number: i32,
+    number: i32,
+    running: bool,
+    check: std::sync::Mutex<Check>,
 }
 
 impl Controller {
@@ -29,7 +39,15 @@ impl Controller {
             interval.tick().await;
             info!("Running async method in Controller");
             Command::new("date").spawn()?.await?;
+            self.update();
         } 
+    }
+    pub fn update(&mut self) -> Result<(), std::io::Error> {
+        let mut counter = self.counter.lock().unwrap();
+        *counter += 1;
+        info!("Counter is:{}", counter);
+        self.running = true;
+        Ok(())
     }
 }
 
@@ -40,6 +58,7 @@ async fn dating() -> Result<(), std::io::Error> {
         // Ensures delay between calls -> first is executed immediatelly
         // Next is excuted after specified duration
         interval.tick().await;
+
         info!("Running async command");
         Command::new("date").spawn()?.await?;
     }
@@ -50,18 +69,31 @@ async fn dating() -> Result<(), std::io::Error> {
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG","debug,actix-async=trace");
     env_logger::init();
-    task::spawn(dating());
 
-    let mut control = Controller::default();
-    task::spawn(async move {
-        control.run().await
+    let mut controller = Controller::default();
+    let mut controllerarc = Arc::new(Mutex::new(Controller::default()));
+    
+
+    // let mut controllerarc = Arc::clone(&controllerarc);
+    tokio::spawn(async move {
+        controller.run().await;
+        
+        // let mut controllerarc = controllerarc.lock().unwrap();
+        // controllerarc.run().await;
     });
-
+    
     println!("Starting web server");
-
-// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    HttpServer::new(|| App::new().service(index_id_name).service(index))
+    
+    // async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let res = HttpServer::new( move || 
+            App::new()
+                .service(index_id_name)
+                .service(index)
+                .data(Arc::clone(&controllerarc))
+        )
         .bind("127.0.0.1:8080")?
         .start()
-        .await
+        .await;
+
+    res
 }
