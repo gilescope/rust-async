@@ -27,7 +27,7 @@ impl Controller {
         let mut interval = time::interval(Duration::from_secs(1));
         loop {
             interval.tick().await;
-            info!("Running command");
+            info!("Running async method in Controller");
             Command::new("date").spawn()?.await?;
         } 
     }
@@ -37,8 +37,10 @@ impl Controller {
 async fn dating() -> Result<(), std::io::Error> {
     let mut interval = time::interval(Duration::from_secs(1));
     loop {
+        // Ensures delay between calls -> first is executed immediatelly
+        // Next is excuted after specified duration
         interval.tick().await;
-        info!("Running command");
+        info!("Running async command");
         Command::new("date").spawn()?.await?;
     }
 }
