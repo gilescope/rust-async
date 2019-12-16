@@ -151,5 +151,8 @@ async fn main() -> std::io::Result<()> {
         .start()
         .await;
 
+
+    // FIXME: not gracefull shutdown ( receiver is still runnning )
+
     res
 }
