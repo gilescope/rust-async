@@ -1,9 +1,10 @@
-use actix_web::{get, App, HttpServer, Responder, web};
+use actix_web::{get, App, HttpServer, HttpResponse, Responder, Error as ActixError, web};
 
 use std::time::Duration;
-use tokio::{task, time, process::Command};
+use tokio::{time, process::Command};
 
 use std::sync::{Arc, RwLock, Mutex, MutexGuard};
+use std::*;
 
 #[macro_use]
 extern crate log;
@@ -12,6 +13,22 @@ extern crate log;
 async fn index_id_name(info: web::Path<(u32, String)>) -> impl Responder {
     format!("Hello {}! id:{}\n", info.1, info.0)
 }
+
+#[get("/api/stop")]
+async fn api_stop(
+    sender: web::Data<Arc<Mutex<sync::mpsc::Sender<Message>>>>,
+) -> Result<HttpResponse, ActixError> {
+    trace!("{:?}", sender);
+    let sender = sender.lock().unwrap();
+    let err = sender.send(Message::RunCheck).unwrap();
+    // if let Err(_) = sender.send(Message::RunCheck).await {
+    //     error!("Not possible to send message -> RunCheck");
+    // }
+    let text = format!("Shoud stop task\n");
+    Ok(HttpResponse::Ok().body(text))
+}
+
+
 
 #[get("/index.html")]
 async fn index() -> &'static str {
@@ -24,8 +41,14 @@ struct Check {
     port: String,
 }
 
-#[derive(Default, Debug)]
+enum Message {
+    RunCheck,
+    Terminate,
+}
+
+#[derive(Debug)]
 struct Controller {
+    receiver: sync::mpsc::Receiver<Message>,
     counter: std::sync::Mutex<i32>,
     number: i32,
     running: bool,
@@ -33,6 +56,15 @@ struct Controller {
 }
 
 impl Controller {
+    pub fn new(receiver: sync::mpsc::Receiver<Message>) -> Self {
+        Controller {
+            receiver,
+            counter: Mutex::new(0),
+            number: 0,
+            running: false,
+            check: Mutex::new(Check::default()),
+        }
+    }
     pub async fn run(&mut self) -> Result<(), std::io::Error> {
         let mut interval = time::interval(Duration::from_secs(1));
         loop {
@@ -64,19 +96,40 @@ async fn dating() -> Result<(), std::io::Error> {
     }
 }
 
+
+
+
+
 // #[tokio::main]
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG","debug,actix-async=trace");
+    std::env::set_var("RUST_LOG","debug,actix_async=trace");
     env_logger::init();
 
-    let mut controller = Controller::default();
-    let mut controllerarc = Arc::new(Mutex::new(Controller::default()));
+    let (sender, receiver) = sync::mpsc::channel();
+
+    tokio::spawn(async move {
+        loop {
+            let message = receiver.recv().unwrap();
+            match message {
+                Message::RunCheck => {
+                    info!("now should be able to run task");
+                },
+                Message::Terminate => {
+                    break; // loop
+                },
+            }
+        }
+    });
+
+
+    //let mut controller = Controller::new(receiver);
+    //let mut controllerarc = Arc::new(Mutex::new(Controller::new()));
     
 
     // let mut controllerarc = Arc::clone(&controllerarc);
     tokio::spawn(async move {
-        controller.run().await;
+        //controller.run().await;
         
         // let mut controllerarc = controllerarc.lock().unwrap();
         // controllerarc.run().await;
@@ -84,12 +137,15 @@ async fn main() -> std::io::Result<()> {
     
     println!("Starting web server");
     
+    let sender = Arc::new(Mutex::new(sender));
+
     // async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let res = HttpServer::new( move || 
             App::new()
                 .service(index_id_name)
                 .service(index)
-                .data(Arc::clone(&controllerarc))
+                .service(api_stop)
+                .data(Arc::clone(&sender))
         )
         .bind("127.0.0.1:8080")?
         .start()

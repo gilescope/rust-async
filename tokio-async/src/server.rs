@@ -16,7 +16,7 @@ extern crate log;
 /// 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    std::env::set_var("RUST_LOG","debug,tokioserver=trace");
+    std::env::set_var("RUST_LOG","debug,tokio-async=trace");
     env_logger::init();
 
     let matches = clap::App::new("Tokio Client")
