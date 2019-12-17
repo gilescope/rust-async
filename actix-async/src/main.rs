@@ -100,34 +100,37 @@ async fn dating() -> Result<(), std::io::Error> {
 
 #[derive(Debug)]
 struct ServiceController {
-    //receiver: sync::mpsc::Receiver<Message>,
-    sender: Arc<Mutex<sync::mpsc::Sender<Message>>>,
+    receiver: Arc<Mutex<sync::mpsc::Receiver<Message>>>,
+    //sender: Arc<Mutex<sync::mpsc::Sender<Message>>>,
 }
 
 impl ServiceController {
+    pub fn new(receiver: Arc<Mutex<sync::mpsc::Receiver<Message>>>) -> Self {
     // pub fn new(receiver: sync::mpsc::Receiver<Message>, sender: Arc<Mutex<sync::mpsc::Sender<Message>>>) -> Self {
-    pub fn new(sender: Arc<Mutex<sync::mpsc::Sender<Message>>>) -> Self {
+    //pub fn new(sender: Arc<Mutex<sync::mpsc::Sender<Message>>>) -> Self {
         ServiceController {
-           //receiver,
-            sender,
+            receiver,
         }
     }
 
     pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let receiver = Arc::clone(&self.receiver);
         // let receiver = self.
-        // let thread = thread::spawn( move ||{ {
-        //     loop {
-        //         let message = self.receiver.recv().unwrap();
-        //         match message {
-        //             Message::RunCheck => {
-        //                 info!("now should be able to run task");
-        //             },
-        //             Message::Terminate => {
-        //                 break; // loop
-        //             },
-        //         }
-        //     }
-        // });
+        std::thread::spawn(move || {
+            loop {
+                let message = receiver.lock().unwrap().recv().unwrap();
+                trace!("message received {:?}", &message);
+                match message {
+                    Message::RunCheck => {
+                        info!("now should be able to run task");
+                    },
+                    Message::Terminate => {
+                        break; // loop
+                    },
+                }
+            }
+            trace!("tokio loop finishes");
+        });
 
         Ok(())
     }
@@ -136,7 +139,7 @@ impl ServiceController {
 impl Drop for ServiceController {
     fn drop(&mut self) {
         trace!("dropping service controller");
-        self.sender.lock().unwrap().send(Message::Terminate).unwrap();
+        // self.sender.lock().unwrap().send(Message::Terminate).unwrap();
     }
 }
 
@@ -148,20 +151,25 @@ async fn main() -> std::io::Result<()> {
     
     // Create sender and receiver to communicate with loop
     let (sender, receiver) = sync::mpsc::channel();
-
-
     let sender = Arc::new(Mutex::new(sender)); // <-- Actix loop
     let sender_exit = Arc::clone(&sender); // <-- Ctrl+C handler
+    let receiver = Arc::new(Mutex::new(receiver));
 
     // Gracefull shutdown -> SIGTERM received -> send message terminate
     ctrlc::set_handler(move || {
+        // Two loops -> two messages
+        sender_exit.lock().unwrap().send(Message::Terminate)
+        .expect("Not possible to send terminate message");
         sender_exit.lock().unwrap().send(Message::Terminate)
         .expect("Not possible to send terminate message");
     }).expect("Error setting Ctrl+C handler");
-    
+
+    let mut service_controller = ServiceController::new(Arc::clone(&receiver));
+    service_controller.run().expect("Not possible to run thread loop");
+
     tokio::spawn(async move {
         loop {
-            let message = receiver.recv().unwrap();
+            let message = receiver.lock().unwrap().recv().unwrap();
             trace!("message received {:?}", &message);
             match message {
                 Message::RunCheck => {
