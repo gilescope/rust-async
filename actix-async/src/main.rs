@@ -41,6 +41,7 @@ struct Check {
     port: String,
 }
 
+#[derive(Debug)]
 enum Message {
     RunCheck,
     Terminate,
@@ -97,20 +98,71 @@ async fn dating() -> Result<(), std::io::Error> {
 }
 
 
+#[derive(Debug)]
+struct ServiceController {
+    //receiver: sync::mpsc::Receiver<Message>,
+    sender: Arc<Mutex<sync::mpsc::Sender<Message>>>,
+}
 
+impl ServiceController {
+    // pub fn new(receiver: sync::mpsc::Receiver<Message>, sender: Arc<Mutex<sync::mpsc::Sender<Message>>>) -> Self {
+    pub fn new(sender: Arc<Mutex<sync::mpsc::Sender<Message>>>) -> Self {
+        ServiceController {
+           //receiver,
+            sender,
+        }
+    }
 
+    pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        // let receiver = self.
+        // let thread = thread::spawn( move ||{ {
+        //     loop {
+        //         let message = self.receiver.recv().unwrap();
+        //         match message {
+        //             Message::RunCheck => {
+        //                 info!("now should be able to run task");
+        //             },
+        //             Message::Terminate => {
+        //                 break; // loop
+        //             },
+        //         }
+        //     }
+        // });
+
+        Ok(())
+    }
+}
+
+impl Drop for ServiceController {
+    fn drop(&mut self) {
+        trace!("dropping service controller");
+        self.sender.lock().unwrap().send(Message::Terminate).unwrap();
+    }
+}
 
 // #[tokio::main]
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG","debug,actix_async=trace");
     env_logger::init();
-
+    
+    // Create sender and receiver to communicate with loop
     let (sender, receiver) = sync::mpsc::channel();
 
+
+    let sender = Arc::new(Mutex::new(sender)); // <-- Actix loop
+    let sender_exit = Arc::clone(&sender); // <-- Ctrl+C handler
+
+    // Gracefull shutdown -> SIGTERM received -> send message terminate
+    ctrlc::set_handler(move || {
+        sender_exit.lock().unwrap().send(Message::Terminate)
+        .expect("Not possible to send terminate message");
+    }).expect("Error setting Ctrl+C handler");
+    
     tokio::spawn(async move {
         loop {
             let message = receiver.recv().unwrap();
+            trace!("message received {:?}", &message);
             match message {
                 Message::RunCheck => {
                     info!("now should be able to run task");
@@ -120,39 +172,22 @@ async fn main() -> std::io::Result<()> {
                 },
             }
         }
-    });
-
-
-    //let mut controller = Controller::new(receiver);
-    //let mut controllerarc = Arc::new(Mutex::new(Controller::new()));
-    
-
-    // let mut controllerarc = Arc::clone(&controllerarc);
-    tokio::spawn(async move {
-        //controller.run().await;
-        
-        // let mut controllerarc = controllerarc.lock().unwrap();
-        // controllerarc.run().await;
+        trace!("tokio loop finishes");
     });
     
-    println!("Starting web server");
-    
-    let sender = Arc::new(Mutex::new(sender));
-
+    info!("Starting web server");
     // async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let res = HttpServer::new( move || 
-            App::new()
-                .service(index_id_name)
-                .service(index)
-                .service(api_stop)
-                .data(Arc::clone(&sender))
+        App::new()
+            .service(index_id_name)
+            .service(index)
+            .service(api_stop)
+            .data(Arc::clone(&sender))
         )
         .bind("127.0.0.1:8080")?
         .start()
         .await;
 
-
-    // FIXME: not gracefull shutdown ( receiver is still runnning )
-
+    info!("Server finished");
     res
 }
