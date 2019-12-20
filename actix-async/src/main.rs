@@ -48,57 +48,6 @@ enum Message {
 }
 
 #[derive(Debug)]
-struct Controller {
-    receiver: sync::mpsc::Receiver<Message>,
-    counter: std::sync::Mutex<i32>,
-    number: i32,
-    running: bool,
-    check: std::sync::Mutex<Check>,
-}
-
-impl Controller {
-    pub fn new(receiver: sync::mpsc::Receiver<Message>) -> Self {
-        Controller {
-            receiver,
-            counter: Mutex::new(0),
-            number: 0,
-            running: false,
-            check: Mutex::new(Check::default()),
-        }
-    }
-    pub async fn run(&mut self) -> Result<(), std::io::Error> {
-        let mut interval = time::interval(Duration::from_secs(1));
-        loop {
-            interval.tick().await;
-            info!("Running async method in Controller");
-            Command::new("date").spawn()?.await?;
-            self.update();
-        } 
-    }
-    pub fn update(&mut self) -> Result<(), std::io::Error> {
-        let mut counter = self.counter.lock().unwrap();
-        *counter += 1;
-        info!("Counter is:{}", counter);
-        self.running = true;
-        Ok(())
-    }
-}
-
-/// Prints output to 
-async fn dating() -> Result<(), std::io::Error> {
-    let mut interval = time::interval(Duration::from_secs(1));
-    loop {
-        // Ensures delay between calls -> first is executed immediatelly
-        // Next is excuted after specified duration
-        interval.tick().await;
-
-        info!("Running async command");
-        Command::new("date").spawn()?.await?;
-    }
-}
-
-
-#[derive(Debug)]
 struct ServiceController {
     receiver: Arc<Mutex<sync::mpsc::Receiver<Message>>>,
     //sender: Arc<Mutex<sync::mpsc::Sender<Message>>>,
