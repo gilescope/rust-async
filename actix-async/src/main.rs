@@ -68,17 +68,18 @@ impl ServiceController {
         std::thread::spawn(move || {
             loop {
                 let message = receiver.lock().unwrap().recv().unwrap();
-                trace!("message received {:?}", &message);
+                trace!("ServiceController: message received {:?}", &message);
                 match message {
                     Message::RunCheck => {
-                        info!("now should be able to run task");
+                        info!("ServiceController: now should be able to run task");
                     },
                     Message::Terminate => {
+                        info!("ServiceController: now terminating project");
                         break; // loop
                     },
                 }
             }
-            trace!("tokio loop finishes");
+            trace!("ServiceController: tokio loop finishes");
         });
 
         Ok(())
@@ -122,9 +123,10 @@ async fn main() -> std::io::Result<()> {
             trace!("message received {:?}", &message);
             match message {
                 Message::RunCheck => {
-                    info!("now should be able to run task");
+                    info!("separtate tokio::spawn: now should be able to run task");
                 },
                 Message::Terminate => {
+                    info!("separtate tokio::spawn: now terminating project");
                     break; // loop
                 },
             }
