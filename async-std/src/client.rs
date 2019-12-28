@@ -21,31 +21,36 @@ use async_std::prelude::*;
 use async_std::task;
 
 fn main() -> io::Result<()> {
-    std::env::set_var("RUST_LOG","debug,tokioclient=trace");
+    std::env::set_var("RUST_LOG", "debug,tokioclient=trace");
     env_logger::init();
 
     let matches = clap::App::new("Async Server")
         .version("1.0")
         .author("Filip Bucek <fbucek@invloop.cz>")
         .about("Listen on specific IP address and Sends data to specific IP address")
-        .arg(clap::Arg::with_name("DATA")
-            .help("Data to send")
-            .required(true)
-            .index(1))
-        .arg(clap::Arg::with_name("ip")
-            .short("i")
-            .help("IP address")
-            .takes_value(true))
-        .arg(clap::Arg::with_name("port")
-            .short("p")
-            .help("port")
-            .takes_value(true))
+        .arg(
+            clap::Arg::with_name("DATA")
+                .help("Data to send")
+                .required(true)
+                .index(1),
+        )
+        .arg(
+            clap::Arg::with_name("ip")
+                .short("i")
+                .help("IP address")
+                .takes_value(true),
+        )
+        .arg(
+            clap::Arg::with_name("port")
+                .short("p")
+                .help("port")
+                .takes_value(true),
+        )
         .get_matches();
 
     let ip = matches.value_of("ip").unwrap_or("127.0.0.1");
     let port = matches.value_of("port").unwrap_or("8080");
     let address = format!("{}:{}", ip, port);
-
 
     task::block_on(async {
         let mut stream = TcpStream::connect(&address).await?;
