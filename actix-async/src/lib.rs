@@ -26,7 +26,7 @@ impl ServiceController {
     pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let receiver = Arc::clone(&self.receiver);
         // let receiver = self.
-        std::thread::spawn(move || {
+        tokio::spawn(async move {
             loop {
                 let message = receiver.lock().unwrap().recv().unwrap();
                 trace!("ServiceController: message received {:?}", &message);
