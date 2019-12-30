@@ -102,7 +102,7 @@ async fn main() -> std::io::Result<()> {
             .data(Arc::clone(&sender))
     })
     .bind("127.0.0.1:8080")?
-    .start()
+    .run()
     .await;
 
     info!("Server finished");
