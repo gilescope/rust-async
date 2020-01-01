@@ -56,17 +56,11 @@ async fn main() -> std::io::Result<()> {
 
     // Gracefull shutdown -> SIGTERM received -> send message terminate
     ctrlc::set_handler(move || {
-        // Two loops -> two messages
-        sender_exit
-            .lock()
-            .unwrap()
-            .send(Message::Terminate)
-            .expect("Not possible to send terminate message");
-        sender_exit
-            .lock()
-            .unwrap()
-            .send(Message::Terminate)
-            .expect("Not possible to send terminate message");
+        let sender = sender_exit.lock().expect("not possible to lock");
+        for _ in 0..2 {
+            info!("sending terminate mesage");
+            sender.send(Message::Terminate).expect("not possible to send terminate message");
+        }
     })
     .expect("Error setting Ctrl+C handler");
 
