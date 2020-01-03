@@ -1,0 +1,17 @@
+stages:
+- test
+- build
+
+test:
+  stage: test
+  tags:
+    - vpsfree
+  script:
+    - cargo test --all
+
+build:
+  stage: build
+  tags:
+    - vpsfree
+  script:
+    - cargo build --release
