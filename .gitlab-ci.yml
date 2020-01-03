@@ -5,13 +5,13 @@ stages:
 test:
   stage: test
   tags:
-    - shell
+    - vpsfree
   script:
     - cargo test --all
 
 build:
   stage: build
   tags:
-    - shell
+    - vpsfree
   script:
     - cargo build --release
