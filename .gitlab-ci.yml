@@ -1,0 +1,17 @@
+stages:
+- test
+- build
+
+test:
+  stage: test
+  tags:
+    - shell
+  script:
+    - cargo test --all
+
+build:
+  stage: build
+  tags:
+    - shell
+  script:
+    - cargo build --release
