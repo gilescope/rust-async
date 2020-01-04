@@ -53,11 +53,13 @@ async fn main() -> std::io::Result<()> {
     let sender = Arc::new(Mutex::new(sender)); // <-- Actix loop
     let sender_exit = Arc::clone(&sender); // <-- Ctrl+C handler
     let receiver = Arc::new(Mutex::new(receiver));
+    let receiver_tokio = Arc::clone(&receiver);
+    let receiver_tokio2 = Arc::clone(&receiver);
 
     // Gracefull shutdown -> SIGTERM received -> send message terminate
     ctrlc::set_handler(move || {
         let sender = sender_exit.lock().expect("not possible to lock");
-        for _ in 0..2 {
+        for _ in 0..4 {
             info!("sending terminate mesage");
             sender.send(Message::Terminate).expect("not possible to send terminate message");
         }
@@ -68,6 +70,21 @@ async fn main() -> std::io::Result<()> {
     service_controller
         .run()
         .expect("Not possible to run thread loop");
+
+    tokio::spawn(async move {
+        let mut service_controller = ServiceController::new(receiver_tokio);
+        service_controller
+            .run()
+            .expect("Not possible to run thread loop");
+    });
+
+    tokio::spawn(async move {
+        let mut service_controller = ServiceController::new(receiver_tokio2);
+        service_controller
+            .run()
+            .expect("Not possible to run thread loop");
+    });
+
 
     tokio::spawn(async move {
         loop {

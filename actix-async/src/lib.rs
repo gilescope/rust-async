@@ -32,6 +32,7 @@ impl ServiceController {
                 trace!("ServiceController: message received {:?}", &message);
                 match message {
                     Message::RunCheck => {
+                        test();
                         info!("ServiceController: now should be able to run task");
                     }
                     Message::Terminate => {
@@ -52,4 +53,8 @@ impl Drop for ServiceController {
         trace!("dropping service controller");
         // self.sender.lock().unwrap().send(Message::Terminate).unwrap();
     }
+}
+
+fn test() {
+    info!("test function");
 }
