@@ -12,23 +12,23 @@ pub enum Message {
 
 #[derive(Debug)]
 pub struct ServiceController {
-    receiver: Arc<Mutex<sync::mpsc::Receiver<Message>>>,
-    //sender: Arc<Mutex<sync::mpsc::Sender<Message>>>,
+    receiver: Arc<Mutex<tokio::sync::mpsc::Receiver<Message>>>,
+    //sender: Arc<Mutex<tokio::sync::mpsc::Sender<Message>>>,
 }
 
 impl ServiceController {
-    pub fn new(receiver: Arc<Mutex<sync::mpsc::Receiver<Message>>>) -> Self {
-        // pub fn new(receiver: sync::mpsc::Receiver<Message>, sender: Arc<Mutex<sync::mpsc::Sender<Message>>>) -> Self {
-        //pub fn new(sender: Arc<Mutex<sync::mpsc::Sender<Message>>>) -> Self {
+    pub fn new(receiver: Arc<Mutex<tokio::sync::mpsc::Receiver<Message>>>) -> Self {
+        // pub fn new(receiver: tokio::sync::mpsc::Receiver<Message>, sender: Arc<Mutex<tokio::sync::mpsc::Sender<Message>>>) -> Self {
+        //pub fn new(sender: Arc<Mutex<tokio::sync::mpsc::Sender<Message>>>) -> Self {
         ServiceController { receiver }
     }
 
-    pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let receiver = Arc::clone(&self.receiver);
         // let receiver = self.
-        tokio::spawn(async move {
-            loop {
-                let message = receiver.lock().unwrap().recv().unwrap();
+        // tokio::spawn(async move {
+            while let Some(message) = receiver.lock().unwrap().recv().await {
+                // let message = receiver.lock().unwrap().recv().await.unwrap();
                 trace!("ServiceController: message received {:?}", &message);
                 match message {
                     Message::RunCheck => {
@@ -41,8 +41,8 @@ impl ServiceController {
                     }
                 }
             }
-            trace!("ServiceController: tokio loop finishes");
-        });
+            // trace!("ServiceController: tokio loop finishes");
+        // });
 
         Ok(())
     }

@@ -49,19 +49,20 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     // Create sender and receiver to communicate with loop
-    let (sender, receiver) = sync::mpsc::channel();
+    let (sender, receiver) = tokio::sync::mpsc::channel(10);
     let sender = Arc::new(Mutex::new(sender)); // <-- Actix loop
     let sender_exit = Arc::clone(&sender); // <-- Ctrl+C handler
     let receiver = Arc::new(Mutex::new(receiver));
     let receiver_tokio = Arc::clone(&receiver);
     let receiver_tokio2 = Arc::clone(&receiver);
+    let receiver_tokio3 = Arc::clone(&receiver);
 
     // Gracefull shutdown -> SIGTERM received -> send message terminate
     ctrlc::set_handler(move || {
-        let sender = sender_exit.lock().expect("not possible to lock");
+        let mut sender = sender_exit.lock().expect("not possible to lock");
         for _ in 0..4 {
             info!("sending terminate mesage");
-            sender.send(Message::Terminate).expect("not possible to send terminate message");
+            sender.try_send(Message::Terminate).expect("not possible to send terminate message");
         }
     })
     .expect("Error setting Ctrl+C handler");
@@ -69,12 +70,14 @@ async fn main() -> std::io::Result<()> {
     let mut service_controller = ServiceController::new(Arc::clone(&receiver));
     service_controller
         .run()
+        .await
         .expect("Not possible to run thread loop");
 
     tokio::spawn(async move {
         let mut service_controller = ServiceController::new(receiver_tokio);
         service_controller
             .run()
+            .await
             .expect("Not possible to run thread loop");
     });
 
@@ -82,26 +85,27 @@ async fn main() -> std::io::Result<()> {
         let mut service_controller = ServiceController::new(receiver_tokio2);
         service_controller
             .run()
+            .await
             .expect("Not possible to run thread loop");
     });
 
-
-    tokio::spawn(async move {
-        loop {
-            let message = receiver.lock().unwrap().recv().unwrap();
-            trace!("message received {:?}", &message);
-            match message {
-                Message::RunCheck => {
-                    info!("separtate tokio::spawn: now should be able to run task");
-                }
-                Message::Terminate => {
-                    info!("separtate tokio::spawn: now terminating project");
-                    break; // loop
-                }
-            }
-        }
-        trace!("tokio loop finishes");
-    });
+ // TODO: try this: https://users.rust-lang.org/t/new-with-async-how-to-structure-application/35233/4
+    // tokio::spawn(async move {
+    //     loop {
+    //         let message = receiver.lock().unwrap().recv().await.unwrap();
+    //         trace!("message received {:?}", &message);
+    //         match message {
+    //             Message::RunCheck => {
+    //                 info!("separtate tokio::spawn: now should be able to run task");
+    //             }
+    //             Message::Terminate => {
+    //                 info!("separtate tokio::spawn: now terminating project");
+    //                 break; // loop
+    //             }
+    //         }
+    //     }
+    //     trace!("tokio loop finishes");
+    // });
 
     info!("Starting web server");
     // async fn main() -> Result<(), Box<dyn std::error::Error>> {
