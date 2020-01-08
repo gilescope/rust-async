@@ -3,20 +3,6 @@ use std::sync::{Arc, Mutex};
 #[macro_use]
 extern crate log;
 use actix_async::*;
-#[get("/{id}/{name}/index.html")]
-async fn index_id_name(info: web::Path<(u32, String)>) -> impl Responder {
-    unimplemented!()
-}
-#[get("/api/stop")]
-async fn api_stop(
-    sender: web::Data<Arc<Mutex<sync::mpsc::Sender<Message>>>>,
-) -> Result<HttpResponse, ActixError> {
-    unimplemented!()
-}
-#[get("/index.html")]
-async fn index() -> &'static str {
-    unimplemented!()
-}
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "debug,actix_async=trace");
