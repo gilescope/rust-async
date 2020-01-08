@@ -19,8 +19,7 @@ impl ServiceController {
 
     pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let receiver = Arc::clone(&self.receiver);
-        while let Some(message) = receiver.lock().unwrap().recv().await {
-        }
+        while let Some(message) = receiver.lock().unwrap().recv().await {}
         Ok(())
     }
 }
