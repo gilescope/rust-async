@@ -2,6 +2,6 @@
 
 members = [
     "actix-async",
-    "async-std",
+  #  "async-std",
     "tokio-async",
 ]
