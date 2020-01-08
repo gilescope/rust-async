@@ -12,6 +12,6 @@ edition = "2018"
 
 [dependencies]
 
-actix-web = "2.0.0"
-actix-rt = "1.0.0"
-tokio = "0.2.6"
+actix-web = { version = "2.0.0", default-features= false }
+actix-rt ={ version =  "1.0.0", default-features= false }
+tokio ={ version =  "0.2.6", default-features= false }

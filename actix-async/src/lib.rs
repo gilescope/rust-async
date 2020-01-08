@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex};
-use std::*;
 
 pub struct ServiceController {
     receiver: Arc<Mutex<tokio::sync::mpsc::Receiver<String>>>,
