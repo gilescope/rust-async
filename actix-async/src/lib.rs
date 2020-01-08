@@ -1,14 +1,12 @@
 use std::sync::{Arc, Mutex};
 use std::*;
 
-pub enum Message {}
-
 pub struct ServiceController {
-    receiver: Arc<Mutex<tokio::sync::mpsc::Receiver<Message>>>,
+    receiver: Arc<Mutex<tokio::sync::mpsc::Receiver<String>>>,
 }
 
 impl ServiceController {
-    pub fn new(receiver: Arc<Mutex<tokio::sync::mpsc::Receiver<Message>>>) -> Self {
+    pub fn new(receiver: Arc<Mutex<tokio::sync::mpsc::Receiver<String>>>) -> Self {
         ServiceController { receiver }
     }
 

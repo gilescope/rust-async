@@ -5,12 +5,8 @@ use std::sync::{Arc, Mutex};
 async fn main() -> std::io::Result<()> {
     let (_sender, receiver) = tokio::sync::mpsc::channel(10);
     let receiver = Arc::new(Mutex::new(receiver));
-    let mut service_controller
-        = ServiceController::new(receiver);
-    service_controller.run().await;
     tokio::spawn(async {
-        let mut service_controller
-            = ServiceController::new(receiver);
+        let mut service_controller = ServiceController::new(receiver);
         service_controller.run().await;
     });
     let res = HttpServer::new(move || unimplemented!())
@@ -19,4 +15,3 @@ async fn main() -> std::io::Result<()> {
         .await;
     res
 }
-
