@@ -62,7 +62,9 @@ async fn main() -> std::io::Result<()> {
         let mut sender = sender_exit.lock().expect("not possible to lock");
         for _ in 0..4 {
             info!("sending terminate mesage");
-            sender.try_send(Message::Terminate).expect("not possible to send terminate message");
+            sender
+                .try_send(Message::Terminate)
+                .expect("not possible to send terminate message");
         }
     })
     .expect("Error setting Ctrl+C handler");
@@ -89,7 +91,7 @@ async fn main() -> std::io::Result<()> {
             .expect("Not possible to run thread loop");
     });
 
- // TODO: try this: https://users.rust-lang.org/t/new-with-async-how-to-structure-application/35233/4
+    // TODO: try this: https://users.rust-lang.org/t/new-with-async-how-to-structure-application/35233/4
     // tokio::spawn(async move {
     //     loop {
     //         let message = receiver.lock().unwrap().recv().await.unwrap();

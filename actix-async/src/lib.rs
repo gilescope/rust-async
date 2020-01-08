@@ -27,21 +27,21 @@ impl ServiceController {
         let receiver = Arc::clone(&self.receiver);
         // let receiver = self.
         // tokio::spawn(async move {
-            while let Some(message) = receiver.lock().unwrap().recv().await {
-                // let message = receiver.lock().unwrap().recv().await.unwrap();
-                trace!("ServiceController: message received {:?}", &message);
-                match message {
-                    Message::RunCheck => {
-                        test();
-                        info!("ServiceController: now should be able to run task");
-                    }
-                    Message::Terminate => {
-                        info!("ServiceController: now terminating project");
-                        break; // loop
-                    }
+        while let Some(message) = receiver.lock().unwrap().recv().await {
+            // let message = receiver.lock().unwrap().recv().await.unwrap();
+            trace!("ServiceController: message received {:?}", &message);
+            match message {
+                Message::RunCheck => {
+                    test();
+                    info!("ServiceController: now should be able to run task");
+                }
+                Message::Terminate => {
+                    info!("ServiceController: now terminating project");
+                    break; // loop
                 }
             }
-            // trace!("ServiceController: tokio loop finishes");
+        }
+        // trace!("ServiceController: tokio loop finishes");
         // });
 
         Ok(())
