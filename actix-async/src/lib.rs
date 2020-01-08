@@ -1,13 +1,10 @@
 use std::sync::{Arc, Mutex};
 use std::*;
 
-#[derive(Debug)]
-pub enum Message {
-    RunCheck,
-    Terminate,
-}
+//#[derive(Debug)]
+pub enum Message {}
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct ServiceController {
     receiver: Arc<Mutex<tokio::sync::mpsc::Receiver<Message>>>,
 }
