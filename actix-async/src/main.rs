@@ -9,9 +9,5 @@ async fn main() -> std::io::Result<()> {
         let mut service_controller = ServiceController::new(receiver);
         service_controller.run().await;
     });
-    let res = HttpServer::new(move || unimplemented!())
-        .bind("")?
-        .run()
-        .await;
-    res
+    Ok(())
 }
